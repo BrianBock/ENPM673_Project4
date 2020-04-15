@@ -47,39 +47,40 @@ if __name__ == '__main__':
     ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
     frame_total={"Baby":113,"Bolt":293,"Car":659}
 
+
+    # Get ROI for Template - Draw the bounding box for the template image (first frame)
+    # Get first frame
+    filepath='../media/'+dataset+'/img/0001.jpg'
+    frame=cv2.imread(filepath)
+    if newROI:
+        cv2.imshow('Frame',frame)
+        (x,y,w,h) = cv2.selectROI("Frame", frame, fromCenter=False,showCrosshair=False)
+    
+    else:
+        x=ROIs[dataset][0]
+        y=ROIs[dataset][1]
+        w=ROIs[dataset][2]
+        h=ROIs[dataset][3]
+    color_template = frame[y:y+h,x:x+w]
+    rect=((x,y),(x+w,y+h))
+    template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
+    cv2.imshow("Template",template)
+    cv2.waitKey(0)
+
+
+
     # load the video 
     for frame_num in range (1, frame_total[dataset]+1):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
         filepath='../media/'+dataset+'/img/'+img_name
         # print(filepath)
-        frame=cv2.imread(filepath)
+        color_frame=cv2.imread(filepath)
+        gray_frame=cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        cv2.imshow("Frame",gray_frame)
+        cv2.waitKey(1)
 
 
-        if frame_num == 1 and newROI:
-            # Get ROI for Template - Draw the bounding box for the template image (first frame)
-            cv2.imshow('Frame',frame)
-            (x,y,w,h) = cv2.selectROI("Frame", frame, fromCenter=False,showCrosshair=False)
-            if w == 0 or h == 0:
-                    continue
-
-            else:
-                print(x,y,w,h)
-                color_template = frame[y:y+h,x:x+w]
-                rect=((x,y),(x+w,y+h))
-                template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
-                cv2.imshow("Template",template)
-                cv2.waitKey(0)
-    
-        elif frame_num == 1 and not newROI:
-            x=ROIs[dataset][0]
-            y=ROIs[dataset][1]
-            w=ROIs[dataset][2]
-            h=ROIs[dataset][3]
-            color_template = frame[y:y+h,x:x+w]
-            rect=((x,y),(x+w,y+h))
-            template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
-            cv2.imshow("Template",template)
-            cv2.waitKey(0)
+        
 
     # for subsequent frame in video:
         # p = affineLKtracker(I,T,rect,p_prev)
