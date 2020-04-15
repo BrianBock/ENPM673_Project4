@@ -41,12 +41,11 @@ def affineLKtracker(I,T,rect,p_prev):
 
 if __name__ == '__main__':
 
-    dataset='Baby' #'Baby, "Bolt", or "Car"
+    dataset='Baby' #'Baby', "Bolt", or "Car"
     newROI=False # Toggle this to True if you want to reselect the ROI for this dataset
 
     ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
     frame_total={"Baby":113,"Bolt":293,"Car":659}
-    frame_num=0
 
     # load the video 
     for frame_num in range (1, frame_total[dataset]+1):
