@@ -41,19 +41,22 @@ def affineLKtracker(I,T,rect,p_prev):
 
 if __name__ == '__main__':
 
-    dataset='Baby' #"Bolt", or "Car"
+    dataset='Baby' #'Baby, "Bolt", or "Car"
+    newROI=False # Toggle this to True if you want to reselect the ROI for this dataset
+
+    ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
     frame_total={"Baby":113,"Bolt":293,"Car":659}
     frame_num=0
 
     # load the video 
-    for frame_num in range (1, frame_total[dataset]):
+    for frame_num in range (1, frame_total[dataset]+1):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
         filepath='../media/'+dataset+'/img/'+img_name
-        print(filepath)
+        # print(filepath)
         frame=cv2.imread(filepath)
 
 
-        if frame_num == 1:
+        if frame_num == 1 and newROI:
             # Get ROI for Template - Draw the bounding box for the template image (first frame)
             cv2.imshow('Frame',frame)
             (x,y,w,h) = cv2.selectROI("Frame", frame, fromCenter=False,showCrosshair=False)
@@ -61,11 +64,21 @@ if __name__ == '__main__':
                     continue
 
             else:
+                print(x,y,w,h)
                 color_template = frame[y:y+h,x:x+w]
                 template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
                 cv2.imshow("Template",template)
                 cv2.waitKey(0)
     
+        elif frame_num == 1 and not newROI:
+            x=ROIs[dataset][0]
+            y=ROIs[dataset][1]
+            w=ROIs[dataset][2]
+            h=ROIs[dataset][3]
+            color_template = frame[y:y+h,x:x+w]
+            template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
+            cv2.imshow("Template",template)
+            cv2.waitKey(0)
 
     # for subsequent frame in video:
         # p = affineLKtracker(I,T,rect,p_prev)
