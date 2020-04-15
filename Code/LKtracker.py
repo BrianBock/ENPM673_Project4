@@ -75,7 +75,7 @@ if __name__ == '__main__':
         filepath='../media/'+dataset+'/img/'+img_name
         # print(filepath)
         color_frame=cv2.imread(filepath)
-        gray_frame=cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray_frame=cv2.cvtColor(color_frame, cv2.COLOR_BGR2GRAY)
         cv2.imshow("Frame",gray_frame)
         cv2.waitKey(1)
 
