@@ -65,6 +65,7 @@ if __name__ == '__main__':
             else:
                 print(x,y,w,h)
                 color_template = frame[y:y+h,x:x+w]
+                rect=((x,y),(x+w,y+h))
                 template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
                 cv2.imshow("Template",template)
                 cv2.waitKey(0)
@@ -75,6 +76,7 @@ if __name__ == '__main__':
             w=ROIs[dataset][2]
             h=ROIs[dataset][3]
             color_template = frame[y:y+h,x:x+w]
+            rect=((x,y),(x+w,y+h))
             template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
             cv2.imshow("Template",template)
             cv2.waitKey(0)
