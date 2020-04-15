@@ -1,5 +1,5 @@
 import cv2
-import numpy
+import numpy as np
 
 def affineLKtracker(I,T,rect,p_prev):
     # I is a grayscale image of the current frame
@@ -57,10 +57,8 @@ if __name__ == '__main__':
         (x,y,w,h) = cv2.selectROI("Frame", frame, fromCenter=False,showCrosshair=False)
     
     else:
-        x=ROIs[dataset][0]
-        y=ROIs[dataset][1]
-        w=ROIs[dataset][2]
-        h=ROIs[dataset][3]
+        x,y,w,h=ROIs[dataset]
+
     color_template = frame[y:y+h,x:x+w]
     rect=((x,y),(x+w,y+h))
     template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
@@ -79,9 +77,10 @@ if __name__ == '__main__':
         cv2.imshow("Frame",gray_frame)
         cv2.waitKey(1)
 
-
+        if frame_num == 2:
+            p=[1,0,0,1,0,0]
         
 
     # for subsequent frame in video:
-        # p = affineLKtracker(I,T,rect,p_prev)
+        p = affineLKtracker(I,T,rect,p)
 
