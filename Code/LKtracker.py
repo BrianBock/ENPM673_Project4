@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from myWarp import*
+
 def affineLKtracker(I,T,rect,p_prev):
     # I is a grayscale image of the current frame
     # T is the template image in grayscale
@@ -14,14 +16,20 @@ def affineLKtracker(I,T,rect,p_prev):
     #while dp < thresh:
 
         # Step 1a: Define an affine warp W using p_prev
-
+    
         # Step 1b: Warp I using W to get I_w
+    I_w=myWarp(I,p_prev)
 
         # Step 2: Compute the error image T - I_w (err)
+    diff=computeError(I_w,I)
 
         # Step 3a: Compute the gradients of I (I_x, I_y)
+    Ix, Iy = myGradients(I)
 
         # Step 3b: Warp I_x and I_y using W
+
+    Ix_warped=myWarp(Ix,p_prev)
+    Iy_warped=myWarp(Iy,p_prev)
 
         # Step 4: Evaluate the Jacobian dW/dp at (x;p) (J)
 
@@ -35,8 +43,7 @@ def affineLKtracker(I,T,rect,p_prev):
 
         # Step 9: Update p_prev
 
-    #p_new = p_prev 
-
+    p_new = p_prev 
     return p_new
 
 if __name__ == '__main__':
@@ -66,7 +73,7 @@ if __name__ == '__main__':
     cv2.waitKey(0)
 
 
-
+    p=[1,0,0,0,1.1,0]
     # load the video 
     for frame_num in range (1, frame_total[dataset]+1):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
@@ -77,10 +84,14 @@ if __name__ == '__main__':
         cv2.imshow("Frame",gray_frame)
         cv2.waitKey(1)
 
-        if frame_num == 2:
-            p=[1,0,0,1,0,0]
+        if frame_num == 1:
+            continue
+
+        # if frame_num == 2:
+            # p=[1,0,0,0,1,0]
         
 
     # for subsequent frame in video:
-        p = affineLKtracker(I,T,rect,p)
+        p = affineLKtracker(gray_frame,template,rect,p)
+        # myWarp(gray_frame,p)
 
