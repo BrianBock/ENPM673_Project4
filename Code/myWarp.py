@@ -24,15 +24,16 @@ def warpROI(p,rect):
 
 	new_corners = []
 	for x,y in corners:
-		new_x = M[0,0]*x+M[0,1]*y+M[0,2]
-		new_y = M[1,0]*x+M[1,1]*y+M[1,2]
+		new_x = M[0,0]*x+M[0,1]*y
+		new_y = M[1,0]*x+M[1,1]*y
 		new_corners.append((int(new_x),int(new_y)))
 
 	return new_corners
 	
 
 def computeError(prev_image,new_image):
-	diff=cv2.subtract(prev_image,new_image)
+	diff= np.subtract(prev_image,new_image,dtype='float32')
+
 	diff = np.interp(diff, (-255,255), (-1, 1))
 
 	return diff

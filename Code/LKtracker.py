@@ -15,7 +15,7 @@ def affineLKtracker(I,T,rect,p_prev):
 
     # thresh = 
     # while dp < thresh:
-    for i in range(20):
+    for i in range(10):
         # Step 1: Warp I using W to get I_w
         I_w=myWarp(I,p_prev,rect)
 
@@ -25,27 +25,16 @@ def affineLKtracker(I,T,rect,p_prev):
         # Step 3a: Compute the gradients of I (I_x, I_y)
         Ix, Iy = myGradients(I)
 
-
         # Step 3b: Warp I_x and I_y using W
-
         Ix_warped=myWarp(Ix,p_prev,rect)
         Iy_warped=myWarp(Iy,p_prev,rect)
 
-        cv2.imshow("Warped Ix",makeImage(Ix_warped))
-        cv2.waitKey(0)
-
-        # Step 4: Evaluate the Jacobian dW/dp at (x;p) (J)
-
-        # Step 5: Compute the steepest descent images delI*J (SDI)
-
-        SD_images=[]
-        for k in range(6):
-            SD_images.append(np.zeros((h,w)))
-
+        # Step 4-5: Compute the steepest descent images delI*dW/dp (sdi)
         H=np.zeros((6,6))
         sdi = []
      
         for i in range(0,w):
+            sdi_col = []
             for j in range(0,h):
                 ind_x = i/w
                 ind_y = j/h
@@ -53,30 +42,28 @@ def affineLKtracker(I,T,rect,p_prev):
                 
                 grad=np.array([[(Ix_warped[j,i]),(Iy_warped[j,i])]])
 
-                sdi.append(np.dot(grad,J))
+                sdi_col.append(np.dot(grad,J))
 
                 # Step 6: Compute the Hessian matrix (H)
-                H+=np.dot(np.transpose(sdi[-1]),sdi[-1])
-
-                for k in range(6):
-                    SD_images[k][j,i]=(sdi[-1][0,k])
+                H+=np.dot(np.transpose(sdi_col[-1]),sdi_col[-1])
+            sdi.append(sdi_col)
 
         # Step 7: Compute Sum_x(SDI'*err)
         pixel_sum = np.zeros((1,6))
         for i in range(w):
             for j in range(h):
-                pixel_sum += (sdi[i*j+j])*diff[j,i]
+                pixel_sum += ((sdi[i][j])*diff[j,i])/(100)
 
         # Step 8: Compute delta p : dp = H_inv * Sum_x(SDI'*err)
         delta_p = np.linalg.inv(H).dot(pixel_sum.T)
-        print(delta_p)
 
         # Step 9: Update p_prev
         p_prev = p_prev + delta_p.T[0]
         p_prev = [float(i) for i in p_prev]
-        print(p_prev)
+
 
     p_new = p_prev
+    print(p_new)
 
     return p_new
 
@@ -107,11 +94,10 @@ if __name__ == '__main__':
     # cv2.imshow("Template",template)
     # cv2.waitKey(0)
 
-
     p=[1,0,-x,0,1,-y]
-    # load the video 
-    # for frame_num in range (1, frame_total[dataset]+1):
-    for frame_num in range(2,3):
+
+    for frame_num in range (2, frame_total[dataset]+1):
+    # for frame_num in range(2,3):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
 
         filepath='../media/'+dataset+'/img/'+img_name
@@ -120,7 +106,6 @@ if __name__ == '__main__':
         gray_frame=cv2.cvtColor(color_frame, cv2.COLOR_BGR2GRAY)
      
         p = affineLKtracker(gray_frame,template,rect,p)
-
         corners = warpROI(p,rect)
         print(corners)
         
@@ -129,5 +114,5 @@ if __name__ == '__main__':
 
         cv2.imshow('Tracked Image',color_frame)
         cv2.waitKey(0)
-        # myWarp(gray_frame,p)
+
 
