@@ -4,6 +4,7 @@ import numpy as np
 from myWarp import*
 
 def affineLKtracker(I,T,rect,p_prev):
+    x,y,w,h=rect
     # I is a grayscale image of the current frame
     # T is the template image in grayscale
     # rect is the bounding box tht marks the template region in tmp 
@@ -18,24 +19,61 @@ def affineLKtracker(I,T,rect,p_prev):
         # Step 1a: Define an affine warp W using p_prev
     
         # Step 1b: Warp I using W to get I_w
-    I_w=myWarp(I,p_prev)
+    I_w=myWarp(I,p_prev,rect)
 
         # Step 2: Compute the error image T - I_w (err)
-    diff=computeError(I_w,I)
+    diff=computeError(T,I_w)
 
         # Step 3a: Compute the gradients of I (I_x, I_y)
     Ix, Iy = myGradients(I)
 
         # Step 3b: Warp I_x and I_y using W
 
-    Ix_warped=myWarp(Ix,p_prev)
-    Iy_warped=myWarp(Iy,p_prev)
+    Ix_warped=myWarp(Ix,p_prev,rect)
+    Iy_warped=myWarp(Iy,p_prev,rect)
+    cv2.imshow("Ix",Ix)
+    cv2.imshow("Iy",Iy)
+    cv2.waitKey(0)
 
         # Step 4: Evaluate the Jacobian dW/dp at (x;p) (J)
 
         # Step 5: Compute the steepest descent images delI*J (SDI)
 
-        # Step 6: Compute the Hessian matrix (H)
+    SD_images=[]
+    for k in range(6):
+        SD_images.append(np.zeros((h,w),dtype=np.uint8))
+        print(SD_images[k].shape)
+
+    # print(Ix_warped.shape)
+    # print(x,y,w,h)
+
+    H=np.zeros((6,6))
+ 
+    for i,col in enumerate(range (x,x+w)):
+           for j,row in enumerate(range(y,y+h)):
+            J=np.array([[i,0,j,0,1,0],[0,i,0,j,0,1]])
+            grad=np.transpose(np.array([[Ix_warped[j,i]],[Iy_warped[j,i]]]))
+
+            # print(j,i)
+            SDI=np.dot(grad,J)
+            print(SDI)
+
+            # Step 6: Compute the Hessian matrix (H)
+            H+=np.dot(np.transpose(SDI),SDI)
+            # print(np.dot(np.transpose(SDI),SDI))
+            print("\n\n\n")
+
+            for k in range(6):
+                SD_images[k][j,i]=SDI[0,k]
+
+    print(H)
+    # for k in range(6):
+    #     cv2.imshow("SDI images"+str(k),SD_images[k])
+    # cv2.waitKey(0)
+
+        
+
+
 
         # Step 7: Compute Sum_x(SDI'*err)
 
@@ -48,7 +86,7 @@ def affineLKtracker(I,T,rect,p_prev):
 
 if __name__ == '__main__':
 
-    dataset='Baby' #'Baby', "Bolt", or "Car"
+    dataset='Car' #'Baby', "Bolt", or "Car"
     newROI=False # Toggle this to True if you want to reselect the ROI for this dataset
 
     ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
@@ -58,6 +96,7 @@ if __name__ == '__main__':
     # Get ROI for Template - Draw the bounding box for the template image (first frame)
     # Get first frame
     filepath='../media/'+dataset+'/img/0001.jpg'
+    # filepath='../media/'+dataset+'/img/Picture1.png'
     frame=cv2.imread(filepath)
     if newROI:
         cv2.imshow('Frame',frame)
@@ -67,20 +106,22 @@ if __name__ == '__main__':
         x,y,w,h=ROIs[dataset]
 
     color_template = frame[y:y+h,x:x+w]
-    rect=((x,y),(x+w,y+h))
+    rect=(x,y,w,h)
     template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("Template",template)
-    cv2.waitKey(0)
+    # cv2.imshow("Template",template)
+    # cv2.waitKey(0)
 
 
-    p=[1,0,0,0,1.1,0]
+    p=[1,0,-x,0,1,-y]
     # load the video 
     for frame_num in range (1, frame_total[dataset]+1):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
+        # img_name='Picture1.png'
         filepath='../media/'+dataset+'/img/'+img_name
         # print(filepath)
         color_frame=cv2.imread(filepath)
         gray_frame=cv2.cvtColor(color_frame, cv2.COLOR_BGR2GRAY)
+        # gray_frame=cv2.GaussianBlur(template,(5,5),0)
         cv2.imshow("Frame",gray_frame)
         cv2.waitKey(1)
 
