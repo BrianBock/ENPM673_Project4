@@ -16,37 +16,45 @@ def myWarp(image,p,rect):
 
 	return warped_img
 
+def warpROI(p,rect):
+	p1,p2,p3,p4,p5,p6=p
+	M=np.float32([[p1,p2,p3],[p4,p5,p6]])
+	x,y,w,h=rect
+	corners = [(x,y),(x+w,y),(x+w,y+h),(x,y+h)]
+
+	new_corners = []
+	for x,y in corners:
+		new_x = M[0,0]*x+M[0,1]*y+M[0,2]
+		new_y = M[1,0]*x+M[1,1]*y+M[1,2]
+		new_corners.append((int(new_x),int(new_y)))
+
+	return new_corners
+	
 
 def computeError(prev_image,new_image):
-	# (score, diff) = structural_similarity(prev_image, new_image, full=True)
-	# diff = (diff * 255).astype("uint8")
-	diff=cv2.absdiff(prev_image,new_image)
-	# cv2.imshow("Difference",diff)
-	# cv2.waitKey(0)
+	diff=cv2.subtract(prev_image,new_image)
+	diff = np.interp(diff, (-255,255), (-1, 1))
+
 	return diff
 
 
 def myGradients(image):
 	ksize=3
 	Ix = cv2.Sobel(image,cv2.CV_64F,1,0,ksize=ksize)
-
-	newIx=np.interp(Ix, (-255*ksize,255*ksize), (0, 255))
-
-	# abs_sobel64f = np.absolute(Ix)
-	Xsobel_8u = np.uint8(newIx)
+	scaled_Ix=np.interp(Ix, (-255*ksize,255*ksize), (-1, 1))
 
 	Iy = cv2.Sobel(image,cv2.CV_64F,0,1,ksize=ksize)
-	print(min(Iy.flatten()),max(Iy.flatten()))
-	newIy=np.interp(Iy, (-255*ksize,255*ksize), (0, 255))
+	scaled_Iy=np.interp(Iy, (-255*ksize,255*ksize), (-1, 1))
 
-	# abs_sobel64f = np.absolute(Iy)
-	Ysobel_8u = np.uint8(newIy)
+	return scaled_Ix, scaled_Iy
 
-	# cv2.imshow("Ix",Xsobel_8u)
-	# cv2.imshow("Iy",Ysobel_8u)
-	# cv2.waitKey(0)
 
-	return Xsobel_8u, Ysobel_8u
+def makeImage(arr):
+	img = np.interp(arr, (-1,1), (0, 255))
+	img = np.uint8(img)
+
+	return img
+
 
 
 

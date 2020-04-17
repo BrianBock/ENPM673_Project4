@@ -13,80 +13,76 @@ def affineLKtracker(I,T,rect,p_prev):
     # p_prev are the parameters of the previous warp
         # list of parameters [p1,p2,p3,p4,p5,p6]
 
-    #thresh = 
-    #while dp < thresh:
-
-        # Step 1a: Define an affine warp W using p_prev
-    
-        # Step 1b: Warp I using W to get I_w
-    I_w=myWarp(I,p_prev,rect)
+    # thresh = 
+    # while dp < thresh:
+    for i in range(20):
+        # Step 1: Warp I using W to get I_w
+        I_w=myWarp(I,p_prev,rect)
 
         # Step 2: Compute the error image T - I_w (err)
-    diff=computeError(T,I_w)
+        diff=computeError(T,I_w)
 
         # Step 3a: Compute the gradients of I (I_x, I_y)
-    Ix, Iy = myGradients(I)
+        Ix, Iy = myGradients(I)
+
 
         # Step 3b: Warp I_x and I_y using W
 
-    Ix_warped=myWarp(Ix,p_prev,rect)
-    Iy_warped=myWarp(Iy,p_prev,rect)
-    cv2.imshow("Ix",Ix)
-    cv2.imshow("Iy",Iy)
-    cv2.waitKey(0)
+        Ix_warped=myWarp(Ix,p_prev,rect)
+        Iy_warped=myWarp(Iy,p_prev,rect)
+
+        cv2.imshow("Warped Ix",makeImage(Ix_warped))
+        cv2.waitKey(0)
 
         # Step 4: Evaluate the Jacobian dW/dp at (x;p) (J)
 
         # Step 5: Compute the steepest descent images delI*J (SDI)
 
-    SD_images=[]
-    for k in range(6):
-        SD_images.append(np.zeros((h,w),dtype=np.uint8))
-        print(SD_images[k].shape)
+        SD_images=[]
+        for k in range(6):
+            SD_images.append(np.zeros((h,w)))
 
-    # print(Ix_warped.shape)
-    # print(x,y,w,h)
+        H=np.zeros((6,6))
+        sdi = []
+     
+        for i in range(0,w):
+            for j in range(0,h):
+                ind_x = i/w
+                ind_y = j/h
+                J=np.array([[ind_x,0,ind_y,0,1,0],[0,ind_x,0,ind_y,0,1]])
+                
+                grad=np.array([[(Ix_warped[j,i]),(Iy_warped[j,i])]])
 
-    H=np.zeros((6,6))
- 
-    for i,col in enumerate(range (x,x+w)):
-           for j,row in enumerate(range(y,y+h)):
-            J=np.array([[i,0,j,0,1,0],[0,i,0,j,0,1]])
-            grad=np.transpose(np.array([[Ix_warped[j,i]],[Iy_warped[j,i]]]))
+                sdi.append(np.dot(grad,J))
 
-            # print(j,i)
-            SDI=np.dot(grad,J)
-            print(SDI)
+                # Step 6: Compute the Hessian matrix (H)
+                H+=np.dot(np.transpose(sdi[-1]),sdi[-1])
 
-            # Step 6: Compute the Hessian matrix (H)
-            H+=np.dot(np.transpose(SDI),SDI)
-            # print(np.dot(np.transpose(SDI),SDI))
-            print("\n\n\n")
-
-            for k in range(6):
-                SD_images[k][j,i]=SDI[0,k]
-
-    print(H)
-    # for k in range(6):
-    #     cv2.imshow("SDI images"+str(k),SD_images[k])
-    # cv2.waitKey(0)
-
-        
-
-
+                for k in range(6):
+                    SD_images[k][j,i]=(sdi[-1][0,k])
 
         # Step 7: Compute Sum_x(SDI'*err)
+        pixel_sum = np.zeros((1,6))
+        for i in range(w):
+            for j in range(h):
+                pixel_sum += (sdi[i*j+j])*diff[j,i]
 
         # Step 8: Compute delta p : dp = H_inv * Sum_x(SDI'*err)
+        delta_p = np.linalg.inv(H).dot(pixel_sum.T)
+        print(delta_p)
 
         # Step 9: Update p_prev
+        p_prev = p_prev + delta_p.T[0]
+        p_prev = [float(i) for i in p_prev]
+        print(p_prev)
 
-    p_new = p_prev 
+    p_new = p_prev
+
     return p_new
 
 if __name__ == '__main__':
 
-    dataset='Car' #'Baby', "Bolt", or "Car"
+    dataset='Baby' #'Baby', "Bolt", or "Car"
     newROI=False # Toggle this to True if you want to reselect the ROI for this dataset
 
     ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
@@ -114,25 +110,24 @@ if __name__ == '__main__':
 
     p=[1,0,-x,0,1,-y]
     # load the video 
-    for frame_num in range (1, frame_total[dataset]+1):
+    # for frame_num in range (1, frame_total[dataset]+1):
+    for frame_num in range(2,3):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
-        # img_name='Picture1.png'
+
         filepath='../media/'+dataset+'/img/'+img_name
-        # print(filepath)
+
         color_frame=cv2.imread(filepath)
         gray_frame=cv2.cvtColor(color_frame, cv2.COLOR_BGR2GRAY)
-        # gray_frame=cv2.GaussianBlur(template,(5,5),0)
-        cv2.imshow("Frame",gray_frame)
-        cv2.waitKey(1)
-
-        if frame_num == 1:
-            continue
-
-        # if frame_num == 2:
-            # p=[1,0,0,0,1,0]
-        
-
-    # for subsequent frame in video:
+     
         p = affineLKtracker(gray_frame,template,rect,p)
+
+        corners = warpROI(p,rect)
+        print(corners)
+        
+        for i in range(-1,3):
+            cv2.line(color_frame,corners[i],corners[i+1],(0,255,0))
+
+        cv2.imshow('Tracked Image',color_frame)
+        cv2.waitKey(0)
         # myWarp(gray_frame,p)
 
