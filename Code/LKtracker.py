@@ -3,7 +3,7 @@ import numpy as np
 
 from myWarp import*
 
-def affineLKtracker(I,T,rect,p_prev):
+def affineLKtracker(I,T,rect,p):
     x,y,w,h=rect
     # I is a grayscale image of the current frame
     # T is the template image in grayscale
@@ -15,19 +15,28 @@ def affineLKtracker(I,T,rect,p_prev):
 
     # thresh = 
     # while dp < thresh:
-    for i in range(10):
+
+    for i in range(5):
+        W = np.float32([[1+p[0],p[1],p[2]],[p[3],1+p[4],p[5]]])
+
         # Step 1: Warp I using W to get I_w
-        I_w=myWarp(I,p_prev,rect)
+        I_w = cv2.warpAffine(I, W, (w, h))
+        cv2.imshow('I_w',makeImage(I_w))
+        cv2.waitKey(0)
 
         # Step 2: Compute the error image T - I_w (err)
-        diff=computeError(T,I_w)
+        diff= np.subtract(T,I_w)
 
         # Step 3a: Compute the gradients of I (I_x, I_y)
-        Ix, Iy = myGradients(I)
+        ksize=3
+        Ix = cv2.Sobel(I,cv2.CV_64F,1,0,ksize=ksize)
+        # scaled_Ix=np.interp(Ix, (-255*ksize,255*ksize), (-1, 1))
+        Iy = cv2.Sobel(I,cv2.CV_64F,0,1,ksize=ksize)
+        # scaled_Iy=np.interp(Iy, (-255*ksize,255*ksize), (-1, 1))
 
         # Step 3b: Warp I_x and I_y using W
-        Ix_warped=myWarp(Ix,p_prev,rect)
-        Iy_warped=myWarp(Iy,p_prev,rect)
+        Ix_warped = cv2.warpAffine(Ix, W, (w, h))
+        Iy_warped = cv2.warpAffine(Iy, W, (w, h))
 
         # Step 4-5: Compute the steepest descent images delI*dW/dp (sdi)
         H=np.zeros((6,6))
@@ -36,9 +45,7 @@ def affineLKtracker(I,T,rect,p_prev):
         for i in range(0,w):
             sdi_col = []
             for j in range(0,h):
-                ind_x = i/w
-                ind_y = j/h
-                J=np.array([[ind_x,0,ind_y,0,1,0],[0,ind_x,0,ind_y,0,1]])
+                J=np.array([[i,0,j,0,1,0],[0,i,0,j,0,1]])
                 
                 grad=np.array([[(Ix_warped[j,i]),(Iy_warped[j,i])]])
 
@@ -46,35 +53,36 @@ def affineLKtracker(I,T,rect,p_prev):
 
                 # Step 6: Compute the Hessian matrix (H)
                 H+=np.dot(np.transpose(sdi_col[-1]),sdi_col[-1])
+            
             sdi.append(sdi_col)
 
         # Step 7: Compute Sum_x(SDI'*err)
         pixel_sum = np.zeros((1,6))
         for i in range(w):
             for j in range(h):
-                pixel_sum += ((sdi[i][j])*diff[j,i])/(100)
+                pixel_sum += ((sdi[i][j])*diff[j,i])
 
         # Step 8: Compute delta p : dp = H_inv * Sum_x(SDI'*err)
         delta_p = np.linalg.inv(H).dot(pixel_sum.T)
 
+
         # Step 9: Update p_prev
-        p_prev = p_prev + delta_p.T[0]
-        p_prev = [float(i) for i in p_prev]
+        p = p + delta_p.T[0]
+        p = [float(i) for i in p]
+        print(p)
 
 
-    p_new = p_prev
-    print(p_new)
+    p_new = p
 
     return p_new
 
 if __name__ == '__main__':
 
-    dataset='Baby' #'Baby', "Bolt", or "Car"
+    dataset='Car' #'Baby', "Bolt", or "Car"
     newROI=False # Toggle this to True if you want to reselect the ROI for this dataset
 
     ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
     frame_total={"Baby":113,"Bolt":293,"Car":659}
-
 
     # Get ROI for Template - Draw the bounding box for the template image (first frame)
     # Get first frame
@@ -90,29 +98,34 @@ if __name__ == '__main__':
 
     color_template = frame[y:y+h,x:x+w]
     rect=(x,y,w,h)
-    template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
-    # cv2.imshow("Template",template)
-    # cv2.waitKey(0)
 
-    p=[1,0,-x,0,1,-y]
+
+    template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
+    cv2.imshow('Template',template)
+    cv2.waitKey(0)
+
+    T = np.float32(template)/255
+
+    p=[0,0,-x,0,0,-y]
 
     for frame_num in range (2, frame_total[dataset]+1):
     # for frame_num in range(2,3):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
-
         filepath='../media/'+dataset+'/img/'+img_name
 
         color_frame=cv2.imread(filepath)
         gray_frame=cv2.cvtColor(color_frame, cv2.COLOR_BGR2GRAY)
+        I = np.float32(gray_frame)/255
      
-        p = affineLKtracker(gray_frame,template,rect,p)
+        p = affineLKtracker(I,T,rect,p)
+        
+        # Draw the new ROI
         corners = warpROI(p,rect)
         print(corners)
-        
         for i in range(-1,3):
             cv2.line(color_frame,corners[i],corners[i+1],(0,255,0))
 
         cv2.imshow('Tracked Image',color_frame)
-        cv2.waitKey(0)
+        cv2.waitKey(1)
 
 
