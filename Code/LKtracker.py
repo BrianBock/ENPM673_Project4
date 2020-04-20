@@ -1,9 +1,7 @@
 import cv2
 import numpy as np
 
-from myWarp import*
-
-def affineLKtracker(I,T,rect,p):
+def affineLKtracker(I,T,rect,p,shape):
     x,y,w,h=rect
     # I is a grayscale image of the current frame
     # T is the template image in grayscale
@@ -16,13 +14,13 @@ def affineLKtracker(I,T,rect,p):
     # thresh = 
     # while dp < thresh:
 
-    for i in range(5):
-        W = np.float32([[1+p[0],p[1],p[2]],[p[3],1+p[4],p[5]]])
+    for i in range(10):
+        W = np.float32([[1+p[0],p[2],p[4]],[p[1],1+p[3],p[5]]])
 
         # Step 1: Warp I using W to get I_w
         I_w = cv2.warpAffine(I, W, (w, h))
-        cv2.imshow('I_w',makeImage(I_w))
-        cv2.waitKey(0)
+        # cv2.imshow('I_w',makeImage(I_w))
+        # cv2.waitKey(0)
 
         # Step 2: Compute the error image T - I_w (err)
         diff= np.subtract(T,I_w)
@@ -69,16 +67,50 @@ def affineLKtracker(I,T,rect,p):
         # Step 9: Update p_prev
         p = p + delta_p.T[0]
         p = [float(i) for i in p]
-        print(p)
 
+    W = np.float32([[1+p[0],p[2],p[4]],[p[1],1+p[3],p[5]]])
+    I_w = cv2.warpAffine(I, W, (w, h))
+    cv2.imshow('I_w',makeImage(I_w))
+    cv2.waitKey(0)
 
     p_new = p
 
+
     return p_new
 
-if __name__ == '__main__':
 
-    dataset='Car' #'Baby', "Bolt", or "Car"
+def warpROI(p,rect):
+    xs,ys,w,h=rect
+    W = np.float32([[1+p[0],p[2],p[4]],[p[1],1+p[3],p[5]]])
+    
+    corners = [(xs,ys),(xs+w,ys),(xs+w,ys+h),(xs,ys+h)]
+    # corners = [(0,0),(w,0),(w,h),(0,h)]
+
+    new_corners = []
+    for x,y in corners:
+        new_x = W[0,0]*x+W[0,1]*y+W[0,2]
+        new_y = W[1,0]*x+W[1,1]*y+W[1,2]
+        new_corners.append((int(new_x),int(new_y)))
+
+    return new_corners
+
+
+def makeImage(arr):
+    img = np.interp(arr, (0,1), (0, 255))
+    img = np.uint8(img)
+
+    return img
+
+
+def drawROI(frame,roi_image):
+    roi_black = cv2.bitwise_and(frame,frame,mask = roi_image)
+
+    cv2.imshow('Out',roi_black)
+    cv2.waitKey(0)
+
+
+def main():
+    dataset='Baby' #'Baby', "Bolt", or "Car"
     newROI=False # Toggle this to True if you want to reselect the ROI for this dataset
 
     ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
@@ -99,33 +131,49 @@ if __name__ == '__main__':
     color_template = frame[y:y+h,x:x+w]
     rect=(x,y,w,h)
 
-
     template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
     cv2.imshow('Template',template)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     T = np.float32(template)/255
 
-    p=[0,0,-x,0,0,-y]
+    p=[0,0,0,0,-x,-y]
+
+    blank = np.full((frame.shape[0],frame.shape[1]),255,'uint8')
+    roi_temp = cv2.rectangle(blank,(x,y),(x+w,y+h),0,2)
+
 
     for frame_num in range (2, frame_total[dataset]+1):
-    # for frame_num in range(2,3):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
         filepath='../media/'+dataset+'/img/'+img_name
 
         color_frame=cv2.imread(filepath)
         gray_frame=cv2.cvtColor(color_frame, cv2.COLOR_BGR2GRAY)
         I = np.float32(gray_frame)/255
-     
-        p = affineLKtracker(I,T,rect,p)
-        
-        # Draw the new ROI
-        corners = warpROI(p,rect)
-        print(corners)
-        for i in range(-1,3):
-            cv2.line(color_frame,corners[i],corners[i+1],(0,255,0))
 
-        cv2.imshow('Tracked Image',color_frame)
-        cv2.waitKey(1)
+        shape = frame.shape
+     
+        p = affineLKtracker(I,T,rect,p,shape)
+
+        W = np.float32([[1+p[0],p[2],p[4]+x],[p[1],1+p[3],p[5]+y]])
+        roi = cv2.warpAffine(roi_temp, W, (frame.shape[1], frame.shape[0]))
+
+        drawROI(frame,roi)
+
+        
+        # # Draw the new ROI
+        # corners = warpROI(p,rect)
+
+        # for i in range(-1,3):
+        #     cv2.line(color_frame,corners[i],corners[i+1],(0,255,0),2)
+
+        # cv2.imshow('Tracked Image',color_frame)
+        # cv2.waitKey(1)
+
+
+if __name__ == '__main__':
+    main()
+
+    
 
 
