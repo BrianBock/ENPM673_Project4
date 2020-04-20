@@ -14,7 +14,7 @@ def affineLKtracker(I,T,rect,p,shape):
     # thresh = 
     # while dp < thresh:
 
-    for i in range(10):
+    for i in range(1):
         W = np.float32([[1+p[0],p[2],p[4]],[p[1],1+p[3],p[5]]])
 
         # Step 1: Warp I using W to get I_w
@@ -71,7 +71,7 @@ def affineLKtracker(I,T,rect,p,shape):
     W = np.float32([[1+p[0],p[2],p[4]],[p[1],1+p[3],p[5]]])
     I_w = cv2.warpAffine(I, W, (w, h))
     cv2.imshow('I_w',makeImage(I_w))
-    cv2.waitKey(0)
+    cv2.waitKey(1)
 
     p_new = p
 
@@ -103,14 +103,22 @@ def makeImage(arr):
 
 
 def drawROI(frame,roi_image):
-    roi_black = cv2.bitwise_and(frame,frame,mask = roi_image)
+    img2gray = cv2.cvtColor(roi_image,cv2.COLOR_BGR2GRAY)
+    ret, mask = cv2.threshold(img2gray, 5, 255, cv2.THRESH_BINARY_INV)
+    mask_inv = cv2.bitwise_not(mask)
 
-    cv2.imshow('Out',roi_black)
-    cv2.waitKey(0)
+    roi_black = cv2.bitwise_and(frame,frame, mask = mask)
+    # img2_fg = cv2.bitwise_and(roi_image,roi_image, mask = mask_inv)
+    # cv2.imshow("img2fg",img2_fg)
+
+    tracked_image=cv2.add(roi_black,roi_image)
+
+    return tracked_image
+
 
 
 def main():
-    dataset='Baby' #'Baby', "Bolt", or "Car"
+    dataset='Bolt' #'Baby', "Bolt", or "Car"
     newROI=False # Toggle this to True if you want to reselect the ROI for this dataset
 
     ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
@@ -139,8 +147,8 @@ def main():
 
     p=[0,0,0,0,-x,-y]
 
-    blank = np.full((frame.shape[0],frame.shape[1]),255,'uint8')
-    roi_temp = cv2.rectangle(blank,(x,y),(x+w,y+h),0,2)
+    blank = np.zeros((frame.shape[0],frame.shape[1],3),'uint8')
+    roi_temp = cv2.rectangle(blank,(x,y),(x+w,y+h),(0,255,0),2)
 
 
     for frame_num in range (2, frame_total[dataset]+1):
@@ -158,7 +166,7 @@ def main():
         W = np.float32([[1+p[0],p[2],p[4]+x],[p[1],1+p[3],p[5]+y]])
         roi = cv2.warpAffine(roi_temp, W, (frame.shape[1], frame.shape[0]))
 
-        drawROI(frame,roi)
+        tracked_image=drawROI(color_frame,roi)
 
         
         # # Draw the new ROI
@@ -167,8 +175,8 @@ def main():
         # for i in range(-1,3):
         #     cv2.line(color_frame,corners[i],corners[i+1],(0,255,0),2)
 
-        # cv2.imshow('Tracked Image',color_frame)
-        # cv2.waitKey(1)
+        cv2.imshow('Tracked Image',tracked_image)
+        cv2.waitKey(5)
 
 
 if __name__ == '__main__':
