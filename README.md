@@ -10,6 +10,8 @@ Clone the entire directory. Open a new terminal window and navigate to the `Code
 
 By default, the program uses a predefined region of interest to define the template from the first frame. If you would like to select your own ROI, you may do so by toggling `newROI` to `True` at the top of the main function in `LKtracker.py`.
 
+You can change the dataset being tested by changing the value of `dataset` at the top of the main function in `LKtracker.py`.
+
 ## Dependencies
 	Python 3 (version 3.8.1)
 	cv2 (version 4.0.0)
