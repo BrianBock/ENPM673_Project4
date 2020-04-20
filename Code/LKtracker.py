@@ -13,18 +13,13 @@ def affineLKtracker(I,T,rect,p):
     count = 0
     cnt = 0
 
-<<<<<<< HEAD
-    # while True:
-    for i in range(5):
-=======
-    for i in range(1):
->>>>>>> origin/master
+    for i in range(10):
         W = np.float32([[1+p[0],p[2],p[4]],[p[1],1+p[3],p[5]]])
 
         # Step 1: Warp I using W to get I_w
         I_w = cv2.warpAffine(I, W, (w, h))
-        cv2.imshow('I_w',makeImage(I_w))
-        cv2.waitKey(1)
+        # cv2.imshow('I_w',makeImage(I_w))
+        # cv2.waitKey(1)
 
         # Step 2: Compute the error image T - I_w (err)
         diff= np.subtract(T,I_w)
@@ -98,7 +93,7 @@ def affineLKtracker(I,T,rect,p):
         p = p + delta_p.T[0]
         p = [float(i) for i in p]
 
-<<<<<<< HEAD
+
         if p_sum < thresh:
             cnt += 1
 
@@ -107,12 +102,6 @@ def affineLKtracker(I,T,rect,p):
 
         # if cnt >= 3:
         #     break
-=======
-    W = np.float32([[1+p[0],p[2],p[4]],[p[1],1+p[3],p[5]]])
-    I_w = cv2.warpAffine(I, W, (w, h))
-    cv2.imshow('I_w',makeImage(I_w))
-    cv2.waitKey(1)
->>>>>>> origin/master
 
         if count == 20:
             break
@@ -150,16 +139,10 @@ def makeImage2(arr,a,b):
     img = np.interp(arr, (a,b), (0, 255))
     img = np.uint8(img)
 
-<<<<<<< HEAD
     return img
 
 
-def main():
-    dataset='Car' #'Baby', "Bolt", or "Car"
-    newROI=True # Toggle this to True if you want to reselect the ROI for this dataset
-    writeToVideo = True
-    show = True
-=======
+
 def drawROI(frame,roi_image):
     img2gray = cv2.cvtColor(roi_image,cv2.COLOR_BGR2GRAY)
     ret, mask = cv2.threshold(img2gray, 5, 255, cv2.THRESH_BINARY_INV)
@@ -177,8 +160,9 @@ def drawROI(frame,roi_image):
 
 def main():
     dataset='Bolt' #'Baby', "Bolt", or "Car"
-    newROI=False # Toggle this to True if you want to reselect the ROI for this dataset
->>>>>>> origin/master
+    newROI=False # Toggle this to True if you want to reselect the ROI for this dataset]
+    writeToVideo = True
+    show = True
 
     ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
     frame_total={"Baby":113,"Bolt":293,"Car":659}
@@ -206,7 +190,6 @@ def main():
 
     p=[0,0,0,0,-x,-y]
 
-<<<<<<< HEAD
     if writeToVideo:
         fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
         video_name = '../output/'+dataset+'_output.mp4'
@@ -214,12 +197,11 @@ def main():
 
         if os.path.exists(video_name):
             os.remove(video_name)
-=======
+
     blank = np.zeros((frame.shape[0],frame.shape[1],3),'uint8')
     roi_temp = cv2.rectangle(blank,(x,y),(x+w,y+h),(0,255,0),2)
->>>>>>> origin/master
 
-        out = cv2.VideoWriter(video_name,fourcc,fps_out,(frame.shape[1],frame.shape[0]))
+    out = cv2.VideoWriter(video_name,fourcc,fps_out,(frame.shape[1],frame.shape[0]))
 
 
     # for frame_num in range (2, frame_total[dataset]+1):
@@ -238,12 +220,8 @@ def main():
         # Draw the new ROI
         corners = warpROI(p,rect)
 
-<<<<<<< HEAD
         for i in range(-1,3):
             cv2.line(color_frame,corners[i],corners[i+1],(0,255,0),2)
-=======
-        tracked_image=drawROI(color_frame,roi)
->>>>>>> origin/master
 
         if show:
             cv2.imshow('Tracked Image',color_frame)
@@ -252,13 +230,11 @@ def main():
         if writeToVideo:
             out.write(color_frame)
 
-<<<<<<< HEAD
     if writeToVideo:
         out.release()
-=======
-        cv2.imshow('Tracked Image',tracked_image)
-        cv2.waitKey(5)
->>>>>>> origin/master
+
+
+
 
 
 if __name__ == '__main__':
