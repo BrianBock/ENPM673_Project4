@@ -159,12 +159,12 @@ def drawROI(frame,roi_image):
 
 
 def main():
-    dataset='Bolt' #'Baby', "Bolt", or "Car"
+    dataset='Baby' #'Baby', "Bolt", or "Car"
     newROI=False # Toggle this to True if you want to reselect the ROI for this dataset]
     writeToVideo = True
     show = True
 
-    ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(73,53,104,89)} # Dataset:(x,y,w,h)
+    ROIs={"Baby":(158,71,59,77),"Bolt":(270,77,39,66),"Car":(63,53,114,89)} # Dataset:(x,y,w,h)
     frame_total={"Baby":113,"Bolt":293,"Car":659}
     frame_rates = {"Baby":10,"Bolt":20,"Car":10}
     # Get ROI for Template - Draw the bounding box for the template image (first frame)
@@ -204,8 +204,8 @@ def main():
     out = cv2.VideoWriter(video_name,fourcc,fps_out,(frame.shape[1],frame.shape[0]))
 
 
-    # for frame_num in range (2, frame_total[dataset]+1):
-    for frame_num in range (2, 50):
+    for frame_num in range (2, frame_total[dataset]+1):
+    # for frame_num in range (2, 50):
         img_name=('0000'+str(frame_num))[-4:]+'.jpg'
         filepath='../media/'+dataset+'/img/'+img_name
 
@@ -230,10 +230,13 @@ def main():
         if writeToVideo:
             out.write(color_frame)
 
+        if cv2.waitKey(100) == ord('q'):
+            break
+
     if writeToVideo:
         out.release()
 
-
+    
 
 
 
