@@ -27,6 +27,10 @@ Baby - https://youtu.be/HgPUPXOXnho
 
 Car - https://youtu.be/XbIi8FRZqsc
 
+Car (histogram equalization) - https://youtu.be/PkEDOV5CIa4
+
+Car (two rectangles) - https://youtu.be/EfyFZgLkukU
+
 
 ## Additional Reading
 
