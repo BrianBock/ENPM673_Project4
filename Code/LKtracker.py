@@ -228,6 +228,7 @@ def main():
         # for i in range(-1,3):
         #     cv2.line(color_frame,corners[i],corners[i+1],(0,255,0),2)
         cv2.rectangle(color_frame,corners[0],corners[2],(0,255,0),2)
+        cv2.rectangle(color_frame,(x,y),(x+w,y+h),(255,0,0),2)
 
         if show:
             cv2.imshow('Tracked Image',color_frame)
