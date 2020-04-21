@@ -159,7 +159,7 @@ def drawROI(frame,roi_image):
 
 
 def main():
-    dataset='Baby' #'Baby', "Bolt", or "Car"
+    dataset='Car' #'Baby', "Bolt", or "Car"
     newROI=False # Toggle this to True if you want to reselect the ROI for this dataset]
     writeToVideo = True
     show = True
@@ -185,6 +185,7 @@ def main():
     rect=(x,y,w,h)
 
     template = cv2.cvtColor(color_template, cv2.COLOR_BGR2GRAY)
+    template=cv2.equalizeHist(template)
 
     T = np.float32(template)/255
 
@@ -198,10 +199,13 @@ def main():
         if os.path.exists(video_name):
             os.remove(video_name)
 
+
+        out = cv2.VideoWriter(video_name,fourcc,fps_out,(frame.shape[1],frame.shape[0]))
+
     blank = np.zeros((frame.shape[0],frame.shape[1],3),'uint8')
     roi_temp = cv2.rectangle(blank,(x,y),(x+w,y+h),(0,255,0),2)
 
-    out = cv2.VideoWriter(video_name,fourcc,fps_out,(frame.shape[1],frame.shape[0]))
+    
 
 
     for frame_num in range (2, frame_total[dataset]+1):
@@ -211,6 +215,7 @@ def main():
 
         color_frame=cv2.imread(filepath)
         gray_frame=cv2.cvtColor(color_frame, cv2.COLOR_BGR2GRAY)
+        gray_frame=cv2.equalizeHist(gray_frame)
         I = np.float32(gray_frame)/255
      
         p,count = affineLKtracker(I,T,rect,p)
@@ -220,8 +225,9 @@ def main():
         # Draw the new ROI
         corners = warpROI(p,rect)
 
-        for i in range(-1,3):
-            cv2.line(color_frame,corners[i],corners[i+1],(0,255,0),2)
+        # for i in range(-1,3):
+        #     cv2.line(color_frame,corners[i],corners[i+1],(0,255,0),2)
+        cv2.rectangle(color_frame,corners[0],corners[2],(0,255,0),2)
 
         if show:
             cv2.imshow('Tracked Image',color_frame)
